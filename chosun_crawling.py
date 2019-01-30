@@ -27,21 +27,27 @@ numOfNone = 0
 numOfHeadline = 0
 for element in found:
     ul = element.find_all(name = "li")
-    print("typeof(element.find_all(name='li')) is: ", type(ul))
-    print("len of find_all(name='li') is: ", len(ul))
+    #print("typeof(element.find_all(name='li')) is: ", type(ul))
+    #print("len of find_all(name='li') is: ", len(ul))
     print(str(num) + "면")
     for title in ul:
         title_to_string = title.get_text()
         print(title_to_string)
+        if title_to_string.find("…") != -1:
+            print("above title contains '...'")
+            title_to_string = title_to_string.replace("…","")
         title_to_string_encoded = urllib.parse.quote(title_to_string)
-        news = "query=" + title_to_string_encoded
+        news = "query=" + title_to_string
         url = naver_api_url + news + sim
         response =  requests.get(url, headers= {"X-Naver-Client-Id":"kNXNpK9fnkCxGK9rPz45",  "X-Naver-Client-Secret": "96h4HYH1DW"}) 
         resource = BeautifulSoup(response.text, features = "xml")
         originalLink = resource.find(name="originallink")
         if originalLink != None:
+            if originalLink.string.find("chosun") == -1:
+                print(resource.prettify())
             print("originallink to string: ",originalLink.string)
         else:
+            print("orinallink is none")
             numOfNone += 1
         '''
             another_url = naver_search_url + title_to_string_encoded
@@ -59,7 +65,7 @@ for element in found:
             else:
                 print("originallink is: ", link_of_news_element_of_another_url)'''
             
-        print("type of originallink: ", type(originalLink))
+        #print("type of originallink: ", type(originalLink))
         numOfHeadline += 1
 
 
@@ -74,6 +80,7 @@ for element in found:
     #print("splited title: ", splited_title)
     #news = "query=" + element.get_text()
     num = num + 1
-    if num == 10: break
+    print("\n")
+    #if num == 10: break
 print("number of none : ", numOfNone)
 print("number of news headline: " , numOfHeadline)
