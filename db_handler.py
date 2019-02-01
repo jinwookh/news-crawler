@@ -21,10 +21,17 @@ def db_insert(table_name, news_list):
         raise TypeError("table name should be string")
     if type(news_list) != type([]):
         raise TypeError("list of news should be list")
-
+    
     for news in news_list:
         if type(news) != type({}):
             raise TypeError("news in news_list should be dictionary type")
-        db_cursor.execute("INSERT INTO ? VALUES (?,?,?,?)",tablbe_name, news['page'],news['title'], news['link'])
+        db_parameter_list = []
+        db_parameter_list.append(table_name)
+        db_parameter_list.append(date_in_integer)
+        db_parameter_list.append(news['page'])
+        db_parameter_list.append(news['title'])
+        db_parameter_list.append(news['link'])
+        
+        db_cursor.execute("INSERT INTO ? VALUES (?,?,?,?)",db_parameter_list)
 
 

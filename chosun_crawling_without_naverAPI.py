@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import sqlite3
 from datetime import date
-
+import db_handler
 
 
 naver_search_url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
@@ -75,14 +75,9 @@ for ss_list_element in ss_list_elements:
     print("")
 
 
-failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
-print('len of news_list: ', len(news_list))
-for news in news_list:
-    print("page of news: ", news['page'])
-    print("title of news: ", news['title'])
-    print("link of news: " , news['link'])
-    print("")
+db_handler.db_insert('chosun', news_list)
 
+failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
 
 print("number of none: ", numOfNone)
 print("number of mismatched news: ", numOfWrongMedia)
