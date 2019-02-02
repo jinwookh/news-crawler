@@ -5,47 +5,38 @@ import urllib.parse
 naver_api_url="https://openapi.naver.com/v1/search/news.xml?"
 sim = "&sort=sim"
 
-response = requests.get("http://srchdb1.chosun.com/pdf/i_service/index_new.jsp")
-
-
-print("typeof(response.text): ", type(response.text))
-
-tag = BeautifulSoup(response.text)
-ss_list_elements =  tag.find_all(name="div", attrs={"class":"ss_list"})
-
+response = requests.get("http://paoin.khan.co.kr/service/Khan/Default.aspx")
+tag = BeautifulSoup(response.text,features = "html.parser")
+article_elements =  tag.find_all(name="div", attrs={"class":"article"})
 
 numOfPage = 1
-numOfAd = 0
 numOfNone = 0
 numOfHeadline = 0
 numOfWrongMedia = 0
-for ss_list_element in ss_list_elements:
-    li_elements = ss_list_element.find_all(name = "li")
-    #print("typeof(element.find_all(name='li')) is: ", type(ul))
-    #print("len of find_all(name='li') is: ", len(ul))
+numOfAd = 0
+for article_element in article_elements:
+    list_elements = article_element.find_all(name = "li")
     print(str(numOfPage) + "면")
-    for li_element in li_elements:
-        title = li_element.get_text()
+    for list_element in list_elements:
+        a_element = list_element.find(name = "a")
+        title = a_element.get("title")
+        if title == "":
+            title = a_element.get_text().strip()
+        
         print(title)
 
         #below code is for handling title with bracket([])
         #since search is not successful with title with bracket,
         #we will try removing bracket from title if title does not contatin
-        #'전면광고'
-
+        #'광고'
         if "[" in title and "]" in title:
             inside_bracket = title.split('[',1)[1].split(']')[0]
-            if title.find('전면광고') != -1:
+            if title.split('[')[0] == '' and title.split(']')[1] == '':
                 numOfAd = numOfAd + 1
-                news['link'] = None
                 print("Above title is ad or sth that is not article")
                 break
             title = title.replace("["+inside_bracket+"]","")
-        
 
-        #if title.find("…") != -1:
-            #title = title.replace("…"," ")
-   
         title_encoded = urllib.parse.quote(title)
         news = "query=" + title
         url = naver_api_url + news + sim
@@ -53,24 +44,26 @@ for ss_list_element in ss_list_elements:
         resource = BeautifulSoup(response.text, features = "xml")
         originalLink_element = resource.find(name="originallink")
         if originalLink_element != None:
-            if originalLink_element.string.find("chosun") == -1:
+            originalLink = originalLink_element.string
+            if originalLink.find("khan") == -1:
                 numOfWrongMedia += 1
-            else:
-                print(originalLink_element.string)
+            print(originalLink)
+
         else:
             print("orinallink is none")
             numOfNone += 1
 
-        numOfHeadline += 1
-
+        numOfHeadline += 1           
+            
+            
 
     numOfPage = numOfPage + 1
     print("")
-    #if num == 10: break
 
-failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2
-)
+failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
+
+print("number of none: ", numOfNone)
 print("number of mismatched news: ", numOfWrongMedia)
-print("number of none : ", numOfNone)
-print("number of news headline: " , numOfHeadline)
+print("number of ads: ", numOfAd)
+print("number of headline: ", numOfHeadline)
 print("failure percentage: ", failure_percentage, "%")
