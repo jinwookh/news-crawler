@@ -32,10 +32,22 @@ def insert(table_name, news_list):
         db_parameter_list.append(news['page'])
         db_parameter_list.append(news['title'])
         db_parameter_list.append(news['link'])
+        
+        insert_query = "INSERT INTO " + table_name + " VALUES(?,?,?,?)"
 
-        query = "INSERT INTO " + table_name + " VALUES(?,?,?,?)"
-        db_cursor.execute( query, db_parameter_list)
+
+        check_repetition_query = "select * from " +table_name + " where title=?"
+        title = news['title']
+        tuplified_title = (title, )
+        repetition_result = db_cursor.execute( check_repetition_query, tuplified_title).fetchone()
+
+        if repetition_result == None:
+            insert_query = "INSERT INTO " + table_name + " VALUES(?,?,?,?)"
+            db_cursor.execute( insert_query, db_parameter_list)
+
     connection.commit()    
     connection.close()
     
-
+def show_all( table_name ):
+    connection = sqlite3.connect('news.db')
+    db_cursor = connection.cursor()
