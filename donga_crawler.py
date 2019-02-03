@@ -7,6 +7,8 @@ response = requests.get("http://news.donga.com/Pdf")
 
 tag = BeautifulSoup(response.text,features = "html.parser")
 section_list_element = tag.find(name="ul", attrs={"class":"section_list"})
+
+
 section_txt_elements =  section_list_element.find_all(name="div", attrs={"class":"section_txt"})
 
 
