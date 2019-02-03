@@ -49,5 +49,13 @@ def insert(table_name, news_list):
     connection.close()
     
 def show_all( table_name ):
+    if type(table_name) != str:
+        raise TypeError("table name should be string")
+
     connection = sqlite3.connect('news.db')
     db_cursor = connection.cursor()
+    query = "select * from " + table_name
+    
+    rows = db_cursor.execute(query)
+    for row in rows:
+        print(row)
