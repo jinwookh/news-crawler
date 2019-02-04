@@ -3,7 +3,7 @@ from datetime import date
 
 DB_NAME = "news-db"
 
-date_in_integer = int(str(date.toda()).replace("-",""))
+date_in_integer = int(str(date.today()).replace("-",""))
 
 def insert(table_name, news_list):
     if type(news_list) != type([]):
@@ -11,7 +11,7 @@ def insert(table_name, news_list):
     if table_name not in ["chosun", "donga", "khan", "munhwa", "kmib"]:
         raise BaseException("wrong table name")
 
-    client = MongoClient()
+    client = pymongo.MongoClient()
     db = client[DB_NAME]
     news_collection = db[table_name]
     

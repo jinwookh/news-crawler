@@ -7,7 +7,7 @@ import sql_handler
 
 
 naver_search_url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
-response = requests.get("http://srchdb1.chosun.com/pdf/i_service/index_new.jsp")
+response = requests.get("http://srchdb1.chosun.com/pdf/i_service/index_new.jsp?Y=2019&M=02&D=02")
 news_list = []
 numOfWrongMedia = 0
 numOfAd = 0
