@@ -49,7 +49,7 @@ def insert(table_name, news_list):
     connection.commit()    
     connection.close()
     
-def show_all( table_name ):
+def shows_all( table_name ):
     if table_name not in news_site_list:
         raise BaseException("Error: site name is not included in list")
 
@@ -63,16 +63,16 @@ def show_all( table_name ):
         print(row)
     connection.close()
 
-def generate_db_text_file():
-   f = open("news-db.txt","w")
-   connection = sqlite3.connect('news.db')
-   db_cursor = connection.cursor()
-   for table_name in news_site_list:
-       query = "select * from " + table_name
-
-    rows =db_cursor.execute(query)
-    for row in rows:
-        f.write(row)
+def converts_db_into_text_file():
+    f = open("news-db.txt","w")
+    connection = sqlite3.connect('news.db')
+    db_cursor = connection.cursor()
+    for table_name in news_site_list:
+        f.write("\n" + table_name + "\n")
+        query = "select * from " + table_name
+        rows =db_cursor.execute(query)
+        for row in rows:
+            f.write(str(row)+"\n")
     
     connection.close()
     f.close()

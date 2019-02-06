@@ -1,0 +1,6 @@
+CHOSUN CRAWLING STARTS!
+Error: number of ss_list_elements are zero
+
+DONGA CRAWLING STARTS!
+Error: number of section_list_element is 0
+

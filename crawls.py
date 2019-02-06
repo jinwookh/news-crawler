@@ -5,26 +5,36 @@ import sqlite3
 from datetime import date
 import sql_handler
 
+CHOSUN_START_QUOTE = "CHOSUN CRAWLING STARTS!"
+DONGA_START_QUOTE = "DONGA CRAWLING STARTS!"
+
+RESPONSE_ERROR_QOUTE = "Error: response error"
+SS_LIST_ZERO_QUOTE = "Error: number of ss_list_elements are zero"
+HEADLINE_ZERO_QUOTE = "Error: number of headline is 0"
+SECTION_LIST_ZERO_QUOTE = "Error: number of section_list_element is 0"
+SECTION_TXT_ZERO_QUOTE = "Error: number of section_txt_element is 0"
+
+
+
+
 NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
 CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp"
-
 DONGA_URL = "http://news.donga.com/Pdf"
 
 
 
-
-
-'''function that crawls chousn site'''
-
 def chosun(): 
     """crawls news headline from chosun, and link from naver, then adds 
     (date, page, title, link) to the database."""
+    crawl_result_list = []
+    crawl_result_list.append(CHOSUN_START_QUOTE)
+    print(CHOSUN_START_QUOTE)
 
-    print("CHOSUN CRAWLING STARTS!")
     response = requests.get(CHOSUN_URL)
     if response.status_code != 200:
-        print("Error: response error")
-        return
+        crawl_result_list.append(RESPONSE_ERROR_QUOTE)
+        print(RESPONSE_ERROR_QUOTE)
+        return crawl_result_list
 
     news_list = []
     numOfWrongMedia = 0
@@ -37,8 +47,9 @@ def chosun():
 
     ss_list_elements =  resource.find_all(name="div", attrs={"class":"ss_list"})
     if len(ss_list_elements) == 0:
-        print("Error: number of ss_list_elements are zero.")
-        return
+        crawl_result_list.append(SS_LIST_ZERO_QUOTE)
+        print(SS_LIST_ZERO_QUOTE)
+        return crawl_result_list
 
     for ss_list_element in ss_list_elements:
         li_elements = ss_list_element.find_all(name = "li")
@@ -91,43 +102,52 @@ def chosun():
     sql_handler.insert('chosun', news_list)
 
     if numOfHeadline == 0:
-        print("Error: number of headline is 0.")
-        return
+        crawl_result_list.append(HEADLINE_ZERO_QUOTE)
+        print(HEADLINE_ZERO_QUOTE)
+        return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
 
-    print("number of none: ", numOfNone)
-    print("number of mismatched news: ", numOfWrongMedia)
-    print("number of ads: ", numOfAd)
-    print("number of headline: " , numOfHeadline)
-    print("failure percentage: ", failure_percentage, "%")
-
-
+    success_quotes = []
+    success_quotes.append("number of none: " + numOfNone)
+    success_quotes.append("number of msmatched news: " +numOfWrongMedia)
+    success_quotes.append("number of ads: " + numOfAd)
+    success_quotes.append("number of headline: " + numOfHeadline)
+    success_quotes.append("failure percentage: " + failure_percentage + "%")
+    
+    crawl_result_list.extend(success_quotes)
+    for success_quote in success_quotes:
+        print(success_quote)
+    return crawl_result_list
 
 
 def donga():
     """crawls news headline from donga, and link from naver, then adds 
     (date, page, title, link) to the database."""
-    
-    print("DONGA CRAWLING STARTS!")
+    crawl_result_list = []
+    crawl_result_list.append(DONGA_START_QUOTE)
+    print(DONGA_START_QUOTE)
 
     response = requests.get(DONGA_URL)
     if response.status_code != 200:
-        print("Error: response error")
-        return
+        crawl_result_list.append(RESPONSE_ERROR_QUOTE)
+        print(RESPONSE_ERROR_QUOTE)
+        return crawl_result_list
     
     resource = BeautifulSoup(response.text, features = "html.parser")
-    section_list_element = tag.find(name = "ul", attrs={"class":"section_list"})
+    section_list_element = resource.find(name = "ul", attrs={"class":"section_list"})
     
-    if len(section_list_element) == 0:
-        print("Error: number of section_list_element is zero")
-        return
+    if section_list_element == None:
+        crawl_result_list.append(SECTION_LIST_ZERO_QUOTE)
+        print(SECTION_LIST_ZERO_QUOTE)
+        return crawl_result_list
 
     section_txt_elements =  section_list_element.find_all(name="div", attrs={"class":"section_txt"})
     
     if len(section_txt_elements) == 0:
-        print("Error: number of section_txt_elements is zero")
-        return
+        crawl_result_list.append(SECTION_TXT_ZERO_QUOTE)
+        print(SECTION_TXT_ZERO_QUOTE)
+        return crawl_result_list
     
     news_list = []
     numOfPage = 1
@@ -157,5 +177,12 @@ def donga():
         numOfPage += 1
 
     sql_handler.insert('donga', news_list)
-    print("number of headline: ", numOfHeadline)
-    print("number of ad: ", numOfAd)
+
+    success_quotes = []
+    success_quotes.append("number of headline: " + numOfHeadline)
+    success_quotes.append("number of ad: " + numOfAd)
+
+    crawl_result_list.extend(success_quotes)
+    for success_quote in success_quotes:
+        print(success_quote)
+    return crawl_result_list
