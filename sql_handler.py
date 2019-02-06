@@ -2,6 +2,7 @@ import sqlite3
 from datetime import date
 
 date_in_integer = int(str(date.today()).replace("-",""))
+news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa']  
 
 connection = sqlite3.connect('news.db')
 db_cursor = connection.cursor()
@@ -22,7 +23,7 @@ def insert(table_name, news_list):
         raise TypeError("table name should be string")
     if type(news_list) != type([]):
         raise TypeError("list of news should be list")
-    assert(table_name in ["chosun", "donga", "khan", "kmib", "munhwa"], "wrong table name" )
+    assert(table_name in news_site_list, "wrong table name" )
 
     for news in news_list:
         if type(news) != type({}):
@@ -49,8 +50,8 @@ def insert(table_name, news_list):
     connection.close()
     
 def show_all( table_name ):
-    if type(table_name) != str:
-        raise TypeError("table name should be string")
+    if table_name not in news_site_list:
+        raise BaseException("Error: site name is not included in list")
 
     connection = sqlite3.connect('news.db')
     db_cursor = connection.cursor()
@@ -58,4 +59,20 @@ def show_all( table_name ):
     
     rows = db_cursor.execute(query)
     for row in rows:
+        print(type(row))
         print(row)
+    connection.close()
+
+def generate_db_text_file():
+   f = open("news-db.txt","w")
+   connection = sqlite3.connect('news.db')
+   db_cursor = connection.cursor()
+   for table_name in news_site_list:
+       query = "select * from " + table_name
+
+    rows =db_cursor.execute(query)
+    for row in rows:
+        f.write(row)
+    
+    connection.close()
+    f.close()
