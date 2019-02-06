@@ -8,13 +8,18 @@ import sql_handler
 NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
 CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp"
 
+DONGA_URL = "http://news.donga.com/Pdf"
+
 
 
 
 
 '''function that crawls chousn site'''
 
-def chosun():
+def chosun(): 
+    """crawls news headline from chosun, and link from naver, then adds 
+    (date, page, title, link) to the database."""
+
     print("CHOSUN CRAWLING STARTS!")
     response = requests.get(CHOSUN_URL)
     if response.status_code != 200:
@@ -32,7 +37,7 @@ def chosun():
 
     ss_list_elements =  resource.find_all(name="div", attrs={"class":"ss_list"})
     if len(ss_list_elements) == 0:
-        print("Error: ss_list_elements are zero.")
+        print("Error: number of ss_list_elements are zero.")
         return
 
     for ss_list_element in ss_list_elements:
@@ -96,3 +101,61 @@ def chosun():
     print("number of ads: ", numOfAd)
     print("number of headline: " , numOfHeadline)
     print("failure percentage: ", failure_percentage, "%")
+
+
+
+
+def donga():
+    """crawls news headline from donga, and link from naver, then adds 
+    (date, page, title, link) to the database."""
+    
+    print("DONGA CRAWLING STARTS!")
+
+    response = requests.get(DONGA_URL)
+    if response.status_code != 200:
+        print("Error: response error")
+        return
+    
+    resource = BeautifulSoup(response.text, features = "html.parser")
+    section_list_element = tag.find(name = "ul", attrs={"class":"section_list"})
+    
+    if len(section_list_element) == 0:
+        print("Error: number of section_list_element is zero")
+        return
+
+    section_txt_elements =  section_list_element.find_all(name="div", attrs={"class":"section_txt"})
+    
+    if len(section_txt_elements) == 0:
+        print("Error: number of section_txt_elements is zero")
+        return
+    
+    news_list = []
+    numOfPage = 1
+    numOfNone = 0
+    numOfHeadline = 0
+    numOfAd = 0
+    for section_txt_element in section_txt_elements:
+        li_elements = section_txt_element.find_all(name = "li")
+        tit_element = section_txt_element.find(name = "span")
+        for li_element in li_elements:
+            news = {}
+            title = li_element.get_text()
+            news['title'] = title
+            news['page'] = numOfPage
+
+            a_element = li_element.find(name="a")
+            if a_element == None:
+                numOfAd += 1
+                break
+            else:
+                link = a_element.get('href')
+                news['link'] = link
+            
+            news_list.append(news)
+            numOfHeadline += 1
+       
+        numOfPage += 1
+
+    sql_handler.insert('donga', news_list)
+    print("number of headline: ", numOfHeadline)
+    print("number of ad: ", numOfAd)
