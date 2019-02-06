@@ -7,6 +7,7 @@ import sql_handler
 
 CHOSUN_START_QUOTE = "CHOSUN CRAWLING STARTS!"
 DONGA_START_QUOTE = "DONGA CRAWLING STARTS!"
+KHAN_START_QUOTE = "KHAN CRAWLING STARTS!"
 
 RESPONSE_ERROR_QOUTE = "Error: response error"
 DATE_NONE_QUOTE = "Error: cannot crawl date from site"
@@ -14,14 +15,14 @@ SS_LIST_ZERO_QUOTE = "Error: number of ss_list_elements are zero"
 HEADLINE_ZERO_QUOTE = "Error: number of headline is 0"
 SECTION_LIST_ZERO_QUOTE = "Error: number of section_list_element is 0"
 SECTION_TXT_ZERO_QUOTE = "Error: number of section_txt_element is 0"
-
+ARTICLE_ZERO_QUOTE = "Error: number of article is 0"
 
 
 
 NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
-CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp?Y=2019&M=02&D=01"
-DONGA_URL = "http://news.donga.com/Pdf?ymd=20190202"
-
+CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp"
+DONGA_URL = "http://news.donga.com/Pdf"
+KHAN_URL = "http://paoin.khan.co.kr/service/Khan/Default.aspx?PaperDate=2019-02-02"
 
 
 def chosun(): 
@@ -159,6 +160,10 @@ def donga():
 
     #crawls date from donga site
     a_element = resource.find(name = "a", attrs={"class":"prev"})
+    if a_element == None:
+        crawl_result_list.append(DATE_NONE_QUOTE)
+        print(DATE_NONE_QUOTE)
+        return crawl_result_list
     a_href = a_element.get("href")
     date_yesterday = a_href.split("ymd=")[1]
     year = int(date_yesterday[0:4])
@@ -221,3 +226,115 @@ def donga():
     for success_quote in success_quotes:
         print(success_quote)
     return crawl_result_list
+
+
+def khan():
+    """crawls title and link from khan and naver site, and stores (date, page, title, link) into db"""
+
+    crawl_result_list = []
+    crawl_result_list.append(KHAN_START_QUOTE)
+    print(KHAN_START_QUOTE)
+
+    response = requests.get(KHAN_URL)
+    if response.status_code != 200:
+        crawl_result_list.append(RESPONSE_ERROR_QUOTE)
+        print(RESPONSE_ERROR_QUOTE)
+        return crawl_result_list
+
+    resource = BeautifulSoup(response.text, features = "html.parser")
+    
+    #below code crawls date from khan site
+    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
+    if len(selected_elements) == 0:
+        crawl_result_list.append(DATE_NONE_QUOTE)
+        print(DATE_NONE_QUOTE)
+        return crawl_result_list
+    year = int(selected_elements[0].get("value"))
+    month = int(selected_elements[1].get("value"))
+    day = int(selected_elements[2].get("value"))
+    date_in_class_date = date(year, month, day)
+    date_today = int(str(date_in_class_date).replace("-",""))
+    
+    article_elements = resource.find_all(name="div", attrs={"class":"article"})
+    if len(article_elements) == 0:
+        crawl_result_list.append(ARTICLE_ZERO_QUOTE)
+        print(ARTICLE_ZERO_QUOTE)
+        return crawl_result_list
+
+    news_list = []
+    numOfWrongMedia = 0
+    numOfAd = 0
+    numOfPage = 1
+    numOfNone = 0
+    numOfHeadline = 0
+    
+    for article_element in article_elements:
+        list_elements = article_element.find_all(name = "li")
+        for list_element in list_elements:
+            news = {}
+            
+            a_element = list_element.find(name = "a")
+            title = a_element.get("title")
+            if title == "":
+                title = a_element.get_text().strip()
+            
+            news['title'] = title
+            news['page'] = numOfPage
+            news['date'] = date_today
+
+
+            #below code is for handling title with bracket([])
+            #since search is not successful with title with bracket,
+            #we will try removing bracket from title if title does not contatin
+            #'광고'
+            if "[" in title and "]" in title:
+                inside_bracket = title.split('[',1)[1].split(']')[0]
+                if title.split('[')[0] == '' and title.split(']')[1] == '':
+                    numOfAd = numOfAd + 1
+                    break
+                title = title.replace("["+inside_bracket+"]","")
+
+            title_encoded = urllib.parse.quote(title)
+            url = NAVER_SEARCH_URL + title_encoded
+            response = requests.get(url)
+            resource = BeautifulSoup(response.text,features = "html.parser")
+            a_element = resource.find(name ="a", attrs ={ "class":"_sp_each_title"})
+
+            if a_element != None:
+                link =  a_element.get('href')
+                if link.find("khan") == -1:
+                    numOfWrongMedia = numOfWrongMedia + 1
+                    news['link'] = None
+                else:
+                    news['link'] = link    
+            else:
+                news['link'] = None
+                numOfNone = numOfNone + 1
+            
+            news_list.append(news)
+            numOfHeadline = numOfHeadline + 1
+    
+
+        numOfPage = numOfPage + 1
+
+    sql_handler.inserts_news_list('khan', news_list)
+
+    if numOfHeadline == 0:
+        crawl_result_list.append(HEADLINE_ZERO_QUOTE)
+        print(HEADLINE_ZERO_QUOTE)
+        return crawl_result_list
+    else:
+        failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
+
+    success_quotes = []
+    success_quotes.append("number of none: " + str(numOfNone))
+    success_quotes.append("number of msmatched news: " + str(numOfWrongMedia))
+    success_quotes.append("number of ads: " + str(numOfAd))
+    success_quotes.append("number of headline: " + str(numOfHeadline))
+    success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
+    
+    crawl_result_list.extend(success_quotes)
+    for success_quote in success_quotes:
+        print(success_quote)
+    return crawl_result_list
+
