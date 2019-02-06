@@ -6,7 +6,7 @@ from datetime import date
 import sql_handler
 
 NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
-
+CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp"
 
 
 
@@ -16,10 +16,9 @@ NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&
 
 def chosun():
     print("CHOSUN CRAWLING STARTS!")
-    response = requests.get("http://srchdb1.chosun.com/pdf/i_service/index_new.jsp?Y=2019&M=02&D=02")
+    response = requests.get(CHOSUN_URL)
     if response.status_code != 200:
         print("Error: response error")
-        print("")
         return
 
     news_list = []
@@ -29,12 +28,11 @@ def chosun():
     numOfNone = 0
     numOfHeadline = 0
 
-    resource = BeautifulSoup(response.text,feautres = "html.parser")
+    resource = BeautifulSoup(response.text,features = "html.parser")
 
     ss_list_elements =  resource.find_all(name="div", attrs={"class":"ss_list"})
-    if ss_list_elements == None:
-        print("Error: ss_list_elements are none.")
-        print("")
+    if len(ss_list_elements) == 0:
+        print("Error: ss_list_elements are zero.")
         return
 
     for ss_list_element in ss_list_elements:
@@ -62,7 +60,7 @@ def chosun():
 
 
             title_encoded = urllib.parse.quote(title)
-            url = naver_search_url + title_encoded
+            url = NAVER_SEARCH_URL + title_encoded
             response = requests.get(url)
             resource = BeautifulSoup(response.text,features = "html.parser")
             a_element = resource.find(name ="a", attrs ={ "class":"_sp_each_title"})
@@ -89,7 +87,6 @@ def chosun():
 
     if numOfHeadline == 0:
         print("Error: number of headline is 0.")
-        print("")
         return
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
@@ -99,4 +96,3 @@ def chosun():
     print("number of ads: ", numOfAd)
     print("number of headline: " , numOfHeadline)
     print("failure percentage: ", failure_percentage, "%")
-    print("")
