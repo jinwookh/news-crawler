@@ -1,3 +1,0 @@
-import crawls
-
-crawls.chosun()
