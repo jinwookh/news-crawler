@@ -1,6 +1,7 @@
 CHOSUN CRAWLING STARTS!
-Error: number of ss_list_elements are zero
+Error: cannot crawl date from site
 
 DONGA CRAWLING STARTS!
-Error: number of section_list_element is 0
+number of headline: 71
+number of ad: 9
 

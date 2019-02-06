@@ -1,7 +1,5 @@
 import sqlite3
-from datetime import date
 
-date_in_integer = int(str(date.today()).replace("-",""))
 news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa']  
 
 connection = sqlite3.connect('news.db')
@@ -12,10 +10,11 @@ db_cursor.execute("CREATE TABLE IF NOT EXISTS donga (date INTEGER, page INTEGER,
 db_cursor.execute("CREATE TABLE IF NOT EXISTS khan (date INTEGER, page INTEGER, title TEXT, link TEXT)")
 db_cursor.execute("CREATE TABLE IF NOT EXISTS munhwa (date INTEGER, page INTEGER, title TEXT, link TEXT)")
 db_cursor.execute("CREATE TABLE IF NOT EXISTS kmib (date INTEGER, page INTEGER, title TEXT, link TEXT)")
+db_cursor.execute("CREATE TABLE IF NOT EXISTS crawling_result (date INTEGER, news TEXT, whole INTEGER, none INTEGER, failure REAL)")
 db_cursor.close()
 connection.close()
 
-def insert(table_name, news_list):
+def inserts_news_list(table_name, news_list):
     connection = sqlite3.connect('news.db')
     db_cursor = connection.cursor()
 
@@ -29,7 +28,7 @@ def insert(table_name, news_list):
         if type(news) != type({}):
             raise TypeError("news in news_list should be dictionary type")
         db_parameter_list = []
-        db_parameter_list.append(date_in_integer)
+        db_parameter_list.append(news['date'])
         db_parameter_list.append(news['page'])
         db_parameter_list.append(news['title'])
         db_parameter_list.append(news['link'])
