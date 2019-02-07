@@ -56,21 +56,16 @@ def chosun():
 
 
     #below code crawls date from chosun site
-    date_txt_element = resource.find(name="span", attrs={"class":"date_txt"})
-    if date_txt_element == None:
+    iframe_element = resource.find(name="iframe", attrs={"title":"날짜정보"})
+    if iframe_element == None:
         crawl_result_list.append(DATE_NONE_QUOTE)
         print(DATE_NONE_QUOTE)
         return crawl_result_list
-    date_txt = date_txt_element.get_text()
-    year, month = date_txt.split("년")[0], date_txt.split("년")[1]
-    day = month.split("월")[1]
-    day = day.split("일")[0]
-    month = monoth.split("월")[0]
-    day = int(day.strip())
-    month = int(month.strip())
-    year = int(year.strip())
-    date_in_class_date = date(day, month, year)
-    date_today = int(str(date_in_class_date).replace("-",""))
+    link_that_has_date = iframe_element.get("src")
+    year = link_that_has_date.split("Y=")[1].split("&")[0]
+    month = link_that_has_date.split("M=")[1].split("&")[0]
+    day = link_that_has_date.split("D=")[1].split("&")[0]
+    date_today = int(year+month+day)
     
 
     for ss_list_element in ss_list_elements:

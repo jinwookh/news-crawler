@@ -1,0 +1,18 @@
+CHOSUN CRAWLING STARTS!
+number of none: 3
+number of msmatched news: 7
+number of ads: 0
+number of headline: 87
+failure percentage: 11.49%
+
+DONGA CRAWLING STARTS!
+number of headline: 84
+number of ad: 9
+
+number of ad: 9
+number of ad: 9
+number of ad: 9
+number of ad: 9
+number of ad: 9
+number of ad: 9
+
