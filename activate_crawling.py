@@ -13,7 +13,8 @@ khan_crawling_results = crawls.khan()
 print("")
 munhwa_crawling_results = crawls.munhwa()
 print("")
-
+kmib_crawling_results = crawls.kmib()
+print("")
 
 for result in chosun_crawling_results:
     f.write(result + '\n')
@@ -28,6 +29,10 @@ for result in khan_crawling_results:
 f.write('\n')
 
 for result in munhwa_crawling_results:
+    f.write(result + '\n')
+f.write('\n')
+
+for result in kmib_crawling_Results:
     f.write(result + '\n')
 f.write('\n')
 
