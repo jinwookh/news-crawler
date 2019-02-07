@@ -1,4 +1,7 @@
 import sqlite3
+from datetime import date
+
+date_today =  int(str(date.today()).replace("-",""))
 
 news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa']  
 
@@ -47,7 +50,24 @@ def inserts_news_list(table_name, news_list):
 
     connection.commit()    
     connection.close()
-    
+   
+def already_crawled(table_name):
+    if table_name not in news_site_list:
+        raise BaseException("Error: site name is not included in list")
+
+    connection = sqlite3.connect('news.db')
+    db_cursor = connection.cursor()
+    query = "select * from " +table_name + " where date=?"
+    tuplified_date_today = (date_today, )
+    repetition_result = db_cursor.execute( query, tuplified_date_today).fetchone()
+    if repetition_result == None:
+        result =  False
+    else:
+        result =  True
+
+    connection.close()
+    return result
+
 def shows_all( table_name ):
     if table_name not in news_site_list:
         raise BaseException("Error: site name is not included in list")

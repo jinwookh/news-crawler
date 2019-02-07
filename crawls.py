@@ -8,7 +8,10 @@ import sql_handler
 CHOSUN_START_QUOTE = "CHOSUN CRAWLING STARTS!"
 DONGA_START_QUOTE = "DONGA CRAWLING STARTS!"
 KHAN_START_QUOTE = "KHAN CRAWLING STARTS!"
+MUNHWA_START_QUOTE = "MUNHWA CRAWLING STARTS!"
+KMIB_START_QUOTE = "KMIB CRAWLING STARTS!"
 
+ALREADY_DONE_QUOTE = "Crawling have already done. Let's skip it"
 RESPONSE_ERROR_QOUTE = "Error: response error"
 DATE_NONE_QUOTE = "Error: cannot crawl date from site"
 SS_LIST_ZERO_QUOTE = "Error: number of ss_list_elements are zero"
@@ -16,13 +19,15 @@ HEADLINE_ZERO_QUOTE = "Error: number of headline is 0"
 SECTION_LIST_ZERO_QUOTE = "Error: number of section_list_element is 0"
 SECTION_TXT_ZERO_QUOTE = "Error: number of section_txt_element is 0"
 ARTICLE_ZERO_QUOTE = "Error: number of article is 0"
-
-
+PAPERLIST_ZERO_QUOTE = "Error: number of papaerlist_element is 0"
 
 NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
 CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp"
 DONGA_URL = "http://news.donga.com/Pdf"
-KHAN_URL = "http://paoin.khan.co.kr/service/Khan/Default.aspx?PaperDate=2019-02-02"
+KHAN_URL = "http://paoin.khan.co.kr/service/Khan/Default.aspx"
+MUNHWA_URL ="http://www.paoin.com/service/Munhwa/Default.aspx"
+KMIB_URL = "http://www.paoin.com/service/Kukinews/Default.aspx" 
+
 
 
 def chosun(): 
@@ -31,6 +36,11 @@ def chosun():
     crawl_result_list = []
     crawl_result_list.append(CHOSUN_START_QUOTE)
     print(CHOSUN_START_QUOTE)
+    
+    if sql_handler.already_crawled("chosun"):
+        crawl_result_list.append(ALREADY_DONE_QUOTE)
+        print(ALREADY_DONE_QUOTE)
+        return crawl_result_list
 
     response = requests.get(CHOSUN_URL)
     if response.status_code != 200:
@@ -143,6 +153,12 @@ def donga():
     crawl_result_list.append(DONGA_START_QUOTE)
     print(DONGA_START_QUOTE)
 
+    if sql_handler.already_crawled("donga"):
+        crawl_result_list.append(ALREADY_DONE_QUOTE)
+        print(ALREADY_DONE_QUOTE)
+        return crawl_result_list
+
+
     response = requests.get(DONGA_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
@@ -230,6 +246,11 @@ def khan():
     crawl_result_list.append(KHAN_START_QUOTE)
     print(KHAN_START_QUOTE)
 
+    if sql_handler.already_crawled("khan"):
+        crawl_result_list.append(ALREADY_DONE_QUOTE)
+        print(ALREADY_DONE_QUOTE)
+        return crawl_result_list
+
     response = requests.get(KHAN_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
@@ -238,9 +259,11 @@ def khan():
 
     resource = BeautifulSoup(response.text, features = "html.parser")
     
+
+
     #below code crawls date from khan site
     selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) == 0:
+    if len(selected_elements) < 3:
         crawl_result_list.append(DATE_NONE_QUOTE)
         print(DATE_NONE_QUOTE)
         return crawl_result_list
@@ -250,6 +273,8 @@ def khan():
     date_in_class_date = date(year, month, day)
     date_today = int(str(date_in_class_date).replace("-",""))
     
+
+
     article_elements = resource.find_all(name="div", attrs={"class":"article"})
     if len(article_elements) == 0:
         crawl_result_list.append(ARTICLE_ZERO_QUOTE)
@@ -333,3 +358,114 @@ def khan():
         print(success_quote)
     return crawl_result_list
 
+
+def munhwa(): 
+    """crawls news headline from chosun, and link from naver, then adds 
+    (date, page, title, link) to the database."""
+    crawl_result_list = []
+    crawl_result_list.append(MUNHWA_START_QUOTE)
+    print(MUNHWA_START_QUOTE)
+
+    if sql_handler.already_crawled("munhwa"):
+        crawl_result_list.append(ALREADY_DONE_QUOTE)
+        print(ALREADY_DONE_QUOTE)
+        return crawl_result_list
+
+    response = requests.get(MUNHWA_URL)
+    if response.status_code != 200:
+        crawl_result_list.append(RESPONSE_ERROR_QUOTE)
+        print(RESPONSE_ERROR_QUOTE)
+        return crawl_result_list
+
+    news_list = []
+    numOfWrongMedia = 0
+    numOfAd = 0
+    numOfPage = 1
+    numOfNone = 0
+    numOfHeadline = 0
+
+    resource = BeautifulSoup(response.text,features = "html.parser")
+
+    paperlist_elements =  resource.find_all(name="div", attrs={"class":"paperlist"})
+    if len(paperlist_elements) == 0:
+        crawl_result_list.append(PAPERLIST_ZERO_QUOTE)
+        print(PAPERLIST_ZERO_QUOTE)
+        return crawl_result_list
+
+
+
+
+    #below code crawls date from munhwa  site
+    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
+    if len(selected_elements) < 3:
+        crawl_result_list.append(DATE_NONE_QUOTE)
+        print(DATE_NONE_QUOTE)
+        return crawl_result_list
+    year = int(selected_elements[0].get("value"))
+    month = int(selected_elements[1].get("value"))
+    day = int(selected_elements[2].get("value"))
+    date_in_class_date = date(year, month, day)
+    date_today = int(str(date_in_class_date).replace("-",""))
+
+
+
+
+
+    for paperlist_element in paperlist_elements:
+        a_elements = paperlist_element.find_all(name = "a")
+        for a_element in a_elements:
+            news = {}
+            title = a_element.get_text().strip()
+            news['title'] = title
+            news['page'] = numOfPage
+            news['date'] = date_today
+
+            if "[" in title and "]" in title:
+                inside_bracket = title.split('[',1)[1].split(']')[0]
+                if title.split('[')[0] == '' and title.split(']')[1] == '':
+                    numOfAd = numOfAd + 1
+                    break
+                title = title.replace("["+inside_bracket+"]","")
+
+            title_encoded = urllib.parse.quote(title)
+            url = NAVER_SEARCH_URL + title_encoded
+            response = requests.get(url)
+            resource = BeautifulSoup(response.text,features = "html.parser")
+            a_element = resource.find(name ="a", attrs ={ "class":"_sp_each_title"})
+            if a_element != None:
+                link =  a_element.get('href')
+                if link.find("munhwa") == -1:
+                    numOfWrongMedia = numOfWrongMedia + 1
+                    news['link'] = None
+                else:
+                    news['link'] = link
+            else:
+                news['link'] = None
+                numOfNone = numOfNone + 1
+
+            news_list.append(news)
+            numOfHeadline = numOfHeadline + 1
+
+        numOfPage = numOfPage + 1
+
+
+    sql_handler.inserts_news_list('munhwa', news_list)
+
+    if numOfHeadline == 0:
+        crawl_result_list.append(HEADLINE_ZERO_QUOTE)
+        print(HEADLINE_ZERO_QUOTE)
+        return crawl_result_list
+    else:
+        failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
+
+    success_quotes = []
+    success_quotes.append("number of none: " + str(numOfNone))
+    success_quotes.append("number of msmatched news: " + str(numOfWrongMedia))
+    success_quotes.append("number of ads: " + str(numOfAd))
+    success_quotes.append("number of headline: " + str(numOfHeadline))
+    success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
+    
+    crawl_result_list.extend(success_quotes)
+    for success_quote in success_quotes:
+        print(success_quote)
+    return crawl_result_list

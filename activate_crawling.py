@@ -10,6 +10,9 @@ print("")
 donga_crawling_results = crawls.donga()
 print("")
 khan_crawling_results = crawls.khan()
+print("")
+munhwa_crawling_results = crawls.munhwa()
+print("")
 
 
 for result in chosun_crawling_results:
@@ -20,7 +23,11 @@ for result in donga_crawling_results:
     f.write(result + '\n')
 f.write('\n')
 
-for reult in khan_crawling_results:
+for result in khan_crawling_results:
+    f.write(result + '\n')
+f.write('\n')
+
+for result in munhwa_crawling_results:
     f.write(result + '\n')
 f.write('\n')
 
