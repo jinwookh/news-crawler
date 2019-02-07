@@ -37,10 +37,6 @@ def chosun():
     crawl_result_list.append(CHOSUN_START_QUOTE)
     print(CHOSUN_START_QUOTE)
     
-    if sql_handler.already_crawled("chosun"):
-        crawl_result_list.append(ALREADY_DONE_QUOTE)
-        print(ALREADY_DONE_QUOTE)
-        return crawl_result_list
 
     response = requests.get(CHOSUN_URL)
     if response.status_code != 200:
@@ -66,7 +62,7 @@ def chosun():
 
 
     #below code crawls date from chosun site
-    iframe_element = resource.find(name="iframe", attrs={"title":"날짜정보"})
+    iframe_element = resource.find(name="iframe")
     if iframe_element == None:
         crawl_result_list.append(DATE_NONE_QUOTE)
         print(DATE_NONE_QUOTE)
@@ -76,7 +72,9 @@ def chosun():
     month = link_that_has_date.split("M=")[1].split("&")[0]
     day = link_that_has_date.split("D=")[1].split("&")[0]
     date_today = int(year+month+day)
-    
+
+
+
 
     for ss_list_element in ss_list_elements:
         li_elements = ss_list_element.find_all(name = "li")
@@ -124,14 +122,22 @@ def chosun():
         numOfPage = numOfPage + 1
 
 
-    sql_handler.inserts_news_list('chosun', news_list)
-
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
         print(HEADLINE_ZERO_QUOTE)
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
+    
+    report = {}
+    report['date'] = date_today
+    report['news'] = 'chosun'
+    report['whole'] = numOfHeadline
+    report['none'] = numOfNone + numOfWrongMedia
+    report['failure'] = failure_percentage
+
+    sql_handler.inserts_news_list('chosun', news_list)
+    sql_handler.inserts_report(report)
 
     success_quotes = []
     success_quotes.append("number of none: " + str(numOfNone))
@@ -153,10 +159,6 @@ def donga():
     crawl_result_list.append(DONGA_START_QUOTE)
     print(DONGA_START_QUOTE)
 
-    if sql_handler.already_crawled("donga"):
-        crawl_result_list.append(ALREADY_DONE_QUOTE)
-        print(ALREADY_DONE_QUOTE)
-        return crawl_result_list
 
 
     response = requests.get(DONGA_URL)
@@ -228,6 +230,7 @@ def donga():
         numOfPage += 1
 
     sql_handler.inserts_news_list('donga', news_list)
+    
 
     success_quotes = []
     success_quotes.append("number of headline: " + str(numOfHeadline))
@@ -246,10 +249,6 @@ def khan():
     crawl_result_list.append(KHAN_START_QUOTE)
     print(KHAN_START_QUOTE)
 
-    if sql_handler.already_crawled("khan"):
-        crawl_result_list.append(ALREADY_DONE_QUOTE)
-        print(ALREADY_DONE_QUOTE)
-        return crawl_result_list
 
     response = requests.get(KHAN_URL)
     if response.status_code != 200:
@@ -337,7 +336,6 @@ def khan():
 
         numOfPage = numOfPage + 1
 
-    sql_handler.inserts_news_list('khan', news_list)
 
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
@@ -345,6 +343,16 @@ def khan():
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
+
+    report = {}
+    report['date'] = date_today
+    report['news'] = 'khan'
+    report['whole'] = numOfHeadline
+    report['none'] = numOfNone + numOfWrongMedia
+    report['failure'] = failure_percentage
+    
+    sql_handler.inserts_news_list('khan', news_list)
+    sql_handler.inserts_report(report)
 
     success_quotes = []
     success_quotes.append("number of none: " + str(numOfNone))
@@ -366,10 +374,6 @@ def munhwa():
     crawl_result_list.append(MUNHWA_START_QUOTE)
     print(MUNHWA_START_QUOTE)
 
-    if sql_handler.already_crawled("munhwa"):
-        crawl_result_list.append(ALREADY_DONE_QUOTE)
-        print(ALREADY_DONE_QUOTE)
-        return crawl_result_list
 
     response = requests.get(MUNHWA_URL)
     if response.status_code != 200:
@@ -406,7 +410,6 @@ def munhwa():
     day = int(selected_elements[2].get("value"))
     date_in_class_date = date(year, month, day)
     date_today = int(str(date_in_class_date).replace("-",""))
-
 
 
 
@@ -457,6 +460,16 @@ def munhwa():
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
+
+    report = {}
+    report['date'] = date_today
+    report['news'] = 'munhwa'
+    report['whole'] = numOfHeadline
+    report['none'] = numOfNone + numOfWrongMedia
+    report['failure'] = failure_percentage
+    
+    sql_handler.inserts_news_list('munhwa', news_list)
+    sql_handler.inserts_report(report)
 
     success_quotes = []
     success_quotes.append("number of none: " + str(numOfNone))

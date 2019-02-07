@@ -1,9 +1,7 @@
 import sqlite3
-from datetime import date
 
-date_today =  int(str(date.today()).replace("-",""))
-
-news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa']  
+news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa']
+table_list = ['chosun', 'kmib','khan', 'donga', 'munhwa', 'crawling_result']  
 
 connection = sqlite3.connect('news.db')
 db_cursor = connection.cursor()
@@ -50,8 +48,40 @@ def inserts_news_list(table_name, news_list):
 
     connection.commit()    
     connection.close()
-   
-def already_crawled(table_name):
+  
+def inserts_report(report):
+    connection = sqlite3.connect('news.db')
+    db_cursor = connection.cursor()
+    table_name = "crawling_result"
+
+    if type(report) != type({}):
+        raise TypeError("report should be dictionary")
+
+    db_parameter_list = []
+    db_parameter_list.append(report['date'])
+    db_parameter_list.append(report['news'])
+    db_parameter_list.append(report['whole'])
+    db_parameter_list.append(report['none'])
+    db_parameter_list.append(report['failure'])
+        
+    check_repetition_query = "select * from " +table_name + " where date=? and news=?"
+    date = report['date']
+    news_company_name = report['news']
+    tuplified_conditions = (date, news_company_name )
+    repetition_result = db_cursor.execute( check_repetition_query, tuplified_conditions).fetchone()  
+
+    if repetition_result == None:
+        insert_query = "INSERT INTO " + table_name + " VALUES(?,?,?,?,?)"
+        db_cursor.execute( insert_query, db_parameter_list)
+
+    connection.commit()
+    connection.close()
+
+
+def already_crawled(table_name, date_today):
+    
+    """DEPRECATED"""
+
     if table_name not in news_site_list:
         raise BaseException("Error: site name is not included in list")
 
@@ -69,7 +99,7 @@ def already_crawled(table_name):
     return result
 
 def shows_all( table_name ):
-    if table_name not in news_site_list:
+    if table_name not in table_list:
         raise BaseException("Error: site name is not included in list")
 
     connection = sqlite3.connect('news.db')
@@ -92,6 +122,15 @@ def converts_db_into_text_file():
         rows =db_cursor.execute(query)
         for row in rows:
             f.write(str(row)+"\n")
-    
-    connection.close()
     f.close()
+    
+    table_name = "crawling_result"
+    f = open("report-db.txt", "w")
+    f.write("\n" + table_name + "\n")
+    query = "select * from " + table_name
+    rows =db_cursor.execute(query)
+    for row in rows:
+        f.write(str(row)+"\n")
+    f.close()
+    connection.close()
+    

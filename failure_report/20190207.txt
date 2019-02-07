@@ -1,20 +1,25 @@
 CHOSUN CRAWLING STARTS!
-Crawling have already done. Let's skip it
+number of none: 8
+number of msmatched news: 6
+number of ads: 12
+number of headline: 89
+failure percentage: 15.73%
 
 DONGA CRAWLING STARTS!
-Crawling have already done. Let's skip it
+number of headline: 84
+number of ad: 9
 
 KHAN CRAWLING STARTS!
-number of none: 8
-number of msmatched news: 5
-number of ads: 15
-number of headline: 53
-failure percentage: 24.53%
+number of none: 3
+number of msmatched news: 15
+number of ads: 26
+number of headline: 84
+failure percentage: 21.43%
 
 MUNHWA CRAWLING STARTS!
-number of none: 13
-number of msmatched news: 23
-number of ads: 28
-number of headline: 127
-failure percentage: 28.35%
+number of none: 12
+number of msmatched news: 17
+number of ads: 30
+number of headline: 135
+failure percentage: 21.48%
 
