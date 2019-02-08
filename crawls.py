@@ -5,11 +5,6 @@ import sqlite3
 from datetime import date, timedelta
 import sql_handler
 
-CHOSUN_START_QUOTE = "CHOSUN CRAWLING STARTS!"
-DONGA_START_QUOTE = "DONGA CRAWLING STARTS!"
-KHAN_START_QUOTE = "KHAN CRAWLING STARTS!"
-MUNHWA_START_QUOTE = "MUNHWA CRAWLING STARTS!"
-KMIB_START_QUOTE = "KMIB CRAWLING STARTS!"
 
 ALREADY_DONE_QUOTE = "Crawling have already done. Let's skip it"
 RESPONSE_ERROR_QOUTE = "Error: response error"
@@ -34,14 +29,11 @@ def chosun():
     """crawls news headline from chosun, and link from naver, then adds 
     (date, page, title, link) to the database."""
     crawl_result_list = []
-    crawl_result_list.append(CHOSUN_START_QUOTE)
-    print(CHOSUN_START_QUOTE)
     
 
     response = requests.get(CHOSUN_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-        print(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
 
     news_list = []
@@ -56,7 +48,6 @@ def chosun():
     ss_list_elements =  resource.find_all(name="div", attrs={"class":"ss_list"})
     if len(ss_list_elements) == 0:
         crawl_result_list.append(SS_LIST_ZERO_QUOTE)
-        print(SS_LIST_ZERO_QUOTE)
         return crawl_result_list
 
 
@@ -65,7 +56,6 @@ def chosun():
     iframe_element = resource.find(name="iframe")
     if iframe_element == None:
         crawl_result_list.append(DATE_NONE_QUOTE)
-        print(DATE_NONE_QUOTE)
         return crawl_result_list
     link_that_has_date = iframe_element.get("src")
     year = link_that_has_date.split("Y=")[1].split("&")[0]
@@ -124,7 +114,6 @@ def chosun():
 
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
-        print(HEADLINE_ZERO_QUOTE)
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
@@ -147,8 +136,6 @@ def chosun():
     success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
     
     crawl_result_list.extend(success_quotes)
-    for success_quote in success_quotes:
-        print(success_quote)
     return crawl_result_list
 
 
@@ -156,15 +143,12 @@ def donga():
     """crawls news headline from donga, and link from naver, then adds 
     (date, page, title, link) to the database."""
     crawl_result_list = []
-    crawl_result_list.append(DONGA_START_QUOTE)
-    print(DONGA_START_QUOTE)
 
 
 
     response = requests.get(DONGA_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-        print(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
     
     resource = BeautifulSoup(response.text, features = "html.parser")
@@ -175,7 +159,6 @@ def donga():
     a_element = resource.find(name = "a", attrs={"class":"prev"})
     if a_element == None:
         crawl_result_list.append(DATE_NONE_QUOTE)
-        print(DATE_NONE_QUOTE)
         return crawl_result_list
     a_href = a_element.get("href")
     date_yesterday = a_href.split("ymd=")[1]
@@ -191,14 +174,12 @@ def donga():
     section_list_element = resource.find(name = "ul", attrs={"class":"section_list"})   
     if section_list_element == None:
         crawl_result_list.append(SECTION_LIST_ZERO_QUOTE)
-        print(SECTION_LIST_ZERO_QUOTE)
         return crawl_result_list
 
     section_txt_elements =  section_list_element.find_all(name="div", attrs={"class":"section_txt"})
     
     if len(section_txt_elements) == 0:
         crawl_result_list.append(SECTION_TXT_ZERO_QUOTE)
-        print(SECTION_TXT_ZERO_QUOTE)
         return crawl_result_list
     
     news_list = []
@@ -237,8 +218,6 @@ def donga():
     success_quotes.append("number of ad: " + str(numOfAd))
 
     crawl_result_list.extend(success_quotes)
-    for success_quote in success_quotes:
-        print(success_quote)
     return crawl_result_list
 
 
@@ -246,14 +225,12 @@ def khan():
     """crawls title and link from khan and naver site, and stores (date, page, title, link) into db"""
 
     crawl_result_list = []
-    crawl_result_list.append(KHAN_START_QUOTE)
-    print(KHAN_START_QUOTE)
+  
 
 
     response = requests.get(KHAN_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-        print(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
 
     resource = BeautifulSoup(response.text, features = "html.parser")
@@ -264,7 +241,6 @@ def khan():
     selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
     if len(selected_elements) < 3:
         crawl_result_list.append(DATE_NONE_QUOTE)
-        print(DATE_NONE_QUOTE)
         return crawl_result_list
     year = int(selected_elements[0].get("value"))
     month = int(selected_elements[1].get("value"))
@@ -277,7 +253,6 @@ def khan():
     article_elements = resource.find_all(name="div", attrs={"class":"article"})
     if len(article_elements) == 0:
         crawl_result_list.append(ARTICLE_ZERO_QUOTE)
-        print(ARTICLE_ZERO_QUOTE)
         return crawl_result_list
 
     news_list = []
@@ -339,7 +314,6 @@ def khan():
 
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
-        print(HEADLINE_ZERO_QUOTE)
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
@@ -362,23 +336,18 @@ def khan():
     success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
     
     crawl_result_list.extend(success_quotes)
-    for success_quote in success_quotes:
-        print(success_quote)
     return crawl_result_list
-
 
 def munhwa(): 
     """crawls news headline from munhwa, and link from naver, then adds 
     (date, page, title, link) to the database."""
     crawl_result_list = []
-    crawl_result_list.append(MUNHWA_START_QUOTE)
-    print(MUNHWA_START_QUOTE)
+   
 
 
     response = requests.get(MUNHWA_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-        print(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
 
     news_list = []
@@ -390,10 +359,10 @@ def munhwa():
 
     resource = BeautifulSoup(response.text,features = "html.parser")
 
-    paperlist_elements =  resource.find_all(name="div", attrs={"class":"paperlist"})
+
+    paperlist_elements =  resource.find_all(name="div", attrs={"class":"paperlist"}) 
     if len(paperlist_elements) == 0:
         crawl_result_list.append(PAPERLIST_ZERO_QUOTE)
-        print(PAPERLIST_ZERO_QUOTE)
         return crawl_result_list
 
 
@@ -403,8 +372,8 @@ def munhwa():
     selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
     if len(selected_elements) < 3:
         crawl_result_list.append(DATE_NONE_QUOTE)
-        print(DATE_NONE_QUOTE)
         return crawl_result_list
+    
     year = int(selected_elements[0].get("value"))
     month = int(selected_elements[1].get("value"))
     day = int(selected_elements[2].get("value"))
@@ -454,7 +423,6 @@ def munhwa():
 
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
-        print(HEADLINE_ZERO_QUOTE)
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
@@ -477,8 +445,6 @@ def munhwa():
     success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
     
     crawl_result_list.extend(success_quotes)
-    for success_quote in success_quotes:
-        print(success_quote)
     return crawl_result_list
 
 
@@ -486,14 +452,12 @@ def kmib():
     """crawls title and link from kmib and naver site, and stores (date, page, title, link) into db"""
 
     crawl_result_list = []
-    crawl_result_list.append(KMIB_START_QUOTE)
-    print(KMIB_START_QUOTE)
+
 
 
     response = requests.get(KMIB_URL)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-        print(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
 
     news_list = []
@@ -505,10 +469,10 @@ def kmib():
 
     resource = BeautifulSoup(response.text,features = "html.parser")
 
-    paperlist_elements =  resource.find_all(name="div", attrs={"class":"paperlist"})
+
+    paperlist_elements =  resource.find_all(name="div", attrs={"class":"paperlist"})    
     if len(paperlist_elements) == 0:
         crawl_result_list.append(PAPERLIST_ZERO_QUOTE)
-        print(PAPERLIST_ZERO_QUOTE)
         return crawl_result_list
 
 
@@ -518,8 +482,8 @@ def kmib():
     selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
     if len(selected_elements) < 3:
         crawl_result_list.append(DATE_NONE_QUOTE)
-        print(DATE_NONE_QUOTE)
         return crawl_result_list
+
     year = int(selected_elements[0].get("value"))
     month = int(selected_elements[1].get("value"))
     day = int(selected_elements[2].get("value"))
@@ -568,7 +532,6 @@ def kmib():
 
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
-        print(HEADLINE_ZERO_QUOTE)
         return crawl_result_list
     else:
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
@@ -591,6 +554,4 @@ def kmib():
     success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
     
     crawl_result_list.extend(success_quotes)
-    for success_quote in success_quotes:
-        print(success_quote)
     return crawl_result_list
