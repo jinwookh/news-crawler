@@ -669,7 +669,10 @@ def seoul():
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
     report['failure'] = failure_percentage
-        
+
+    sql_handler.inserts_news_list('seoul', news_list)
+    sql_handler.inserts_report(report)
+
     success_quotes = []
     success_quotes.append("number of none: " + str(numOfNone))
     success_quotes.append("number of msmatched news: " + str(numOfWrongMedia))
@@ -792,7 +795,8 @@ def hankook():
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
     report['failure'] = failure_percentage
-        
+    
+
     success_quotes = []
     success_quotes.append("number of none: " + str(numOfNone))
     success_quotes.append("number of msmatched news: " + str(numOfWrongMedia))
@@ -909,7 +913,10 @@ def mk():
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
     report['failure'] = failure_percentage
-        
+       
+    sql_handler.inserts_news_list('mk', news_list)
+    sql_handler.inserts_report(report)
+
     success_quotes = []
     success_quotes.append("number of none: " + str(numOfNone))
     success_quotes.append("number of msmatched news: " + str(numOfWrongMedia))

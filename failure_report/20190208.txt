@@ -1,22 +1,32 @@
-number of none: 2
-number of msmatched news: 9
-number of ads: 0
-number of headline: 88
-failure percentage: 12.5%
+number of none: 4
+number of msmatched news: 5
+number of ads: 11
+number of headline: 86
+failure percentage: 10.47%
 number of headline: 88
 number of ad: 9
 number of none: 4
-number of msmatched news: 16
+number of msmatched news: 18
 number of ads: 27
 number of headline: 90
-failure percentage: 22.22%
-number of none: 12
-number of msmatched news: 15
+failure percentage: 24.44%
+number of none: 24
+number of msmatched news: 22
 number of ads: 30
-number of headline: 135
-failure percentage: 20.0%
+number of headline: 150
+failure percentage: 30.67%
 number of none: 15
-number of msmatched news: 26
+number of msmatched news: 27
 number of ads: 31
 number of headline: 110
-failure percentage: 37.27%
+failure percentage: 38.18%
+number of none: 19
+number of msmatched news: 12
+number of ads: 26
+number of headline: 98
+failure percentage: 31.63%
+number of none: 2
+number of msmatched news: 19
+number of ads: 28
+number of headline: 71
+failure percentage: 29.58%

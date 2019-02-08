@@ -1,7 +1,7 @@
 import sqlite3
 
-news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa']
-table_list = ['chosun', 'kmib','khan', 'donga', 'munhwa', 'crawling_result']  
+news_site_list = ['chosun', 'kmib','khan', 'donga', 'munhwa', 'seoul', 'mk']
+table_list = news_site_list + ['crawling_result'] 
 
 connection = sqlite3.connect('news.db')
 db_cursor = connection.cursor()
@@ -11,7 +11,11 @@ db_cursor.execute("CREATE TABLE IF NOT EXISTS donga (date INTEGER, page INTEGER,
 db_cursor.execute("CREATE TABLE IF NOT EXISTS khan (date INTEGER, page INTEGER, title TEXT, link TEXT)")
 db_cursor.execute("CREATE TABLE IF NOT EXISTS munhwa (date INTEGER, page INTEGER, title TEXT, link TEXT)")
 db_cursor.execute("CREATE TABLE IF NOT EXISTS kmib (date INTEGER, page INTEGER, title TEXT, link TEXT)")
+db_cursor.execute("CREATE TABLE IF NOT EXISTS seoul (date INTEGER, page INTEGER, title TEXT, link TEXT)")
+db_cursor.execute("CREATE TABLE IF NOT EXISTS mk (date INTEGER, page INTEGER, title TEXT, link TEXT)")
+
 db_cursor.execute("CREATE TABLE IF NOT EXISTS crawling_result (date INTEGER, news TEXT, whole INTEGER, none INTEGER, failure REAL)")
+
 db_cursor.close()
 connection.close()
 
