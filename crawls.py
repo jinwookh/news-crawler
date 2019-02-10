@@ -2,9 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 import urllib.parse
 import sqlite3
-from datetime import date, timedelta
 import sql_handler
-
+from datetime import date as Date, timedelta
+import re
 
 ALREADY_DONE_QUOTE = "Crawling have already done. Let's skip it"
 RESPONSE_ERROR_QUOTE = "Error: response error"
@@ -16,6 +16,8 @@ SECTION_TXT_ZERO_QUOTE = "Error: number of section_txt_element is 0"
 ARTICLE_ZERO_QUOTE = "Error: number of article is 0"
 PAPERLIST_ZERO_QUOTE = "Error: number of papaerlist_element is 0"
 A_ZERO_QUOTE = "Error: number of a_element is 0"
+PAGE_ZERO_QUOTE = "Error: number of pages are zero"
+
 
 NAVER_SEARCH_URL = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query="
 CHOSUN_URL = "http://srchdb1.chosun.com/pdf/i_service/index_new.jsp"
@@ -27,13 +29,22 @@ SEOUL_URL = "http://www.paoin.com/service/SeoulEconomic/Default.aspx"
 HANKOOK_URL = "http://www.paoin.com/Service/Hankooki2018/Default.aspx"        
 MK_URL = "http://epaper.mk.co.kr/PaperList.aspx"
 
-def chosun(): 
+def chosun(date): 
     """crawls news headline from chosun, and link from naver, then adds 
     (date, page, title, link) to the database."""
     crawl_result_list = []
     
+    
+    date = date.replace("-","")
+    year =  date[0:4]
+    month = date[4:6]
+    day = date[6:8]
+    
+    chosun_url = CHOSUN_URL + "?Y=" + year + "&M=" + month + "&D=" + day
+    date = int(date)
 
-    response = requests.get(CHOSUN_URL)
+
+    response = requests.get(chosun_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
@@ -54,20 +65,8 @@ def chosun():
 
 
 
-    #below code crawls date from chosun site
-    iframe_element = resource.find(name="iframe")
-    if iframe_element == None:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    link_that_has_date = iframe_element.get("src")
-    year = link_that_has_date.split("Y=")[1].split("&")[0]
-    month = link_that_has_date.split("M=")[1].split("&")[0]
-    day = link_that_has_date.split("D=")[1].split("&")[0]
-    date_today = int(year+month+day)
 
-
-
-
+    #below code extracts title and link
     for ss_list_element in ss_list_elements:
         li_elements = ss_list_element.find_all(name = "li")
         for li_element in li_elements:
@@ -75,18 +74,19 @@ def chosun():
             title = li_element.get_text()
             news['title'] = title
             news['page'] = numOfPage
-            news['date'] = date_today
+            news['date'] = date
+
+
             #below code is for handling title with bracket([])
             #since search is not successful with title with bracket,
             #we will try removing bracket from title if title does not contatin
             #'전면광고'
-
             if "[" in title and "]" in title:
                 inside_bracket = title.split('[',1)[1].split(']')[0]
                 if title.find('전면광고') != -1:
                     numOfAd = numOfAd + 1
                     news['link'] = None
-                    break
+                    continue
                 title = title.replace("["+inside_bracket+"]","")
 
 
@@ -121,11 +121,12 @@ def chosun():
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
     
     report = {}
-    report['date'] = date_today
+    report['date'] = date
     report['news'] = 'chosun'
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
     report['failure'] = failure_percentage
+    
 
     sql_handler.inserts_news_list('chosun', news_list)
     sql_handler.inserts_report(report)
@@ -141,36 +142,21 @@ def chosun():
     return crawl_result_list
 
 
-def donga():
+def donga(date):
     """crawls news headline from donga, and link from naver, then adds 
     (date, page, title, link) to the database."""
     crawl_result_list = []
 
+    date = date.replace("-", "")
+    donga_url = DONGA_URL + "?ymd=" + date
+    date = int(date)
 
-
-    response = requests.get(DONGA_URL)
+    response = requests.get(donga_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
     
     resource = BeautifulSoup(response.text, features = "html.parser")
-
-
-
-    #crawls date from donga site
-    a_element = resource.find(name = "a", attrs={"class":"prev"})
-    if a_element == None:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    a_href = a_element.get("href")
-    date_yesterday = a_href.split("ymd=")[1]
-    year = int(date_yesterday[0:4])
-    month = int(date_yesterday[4:6])
-    day = int(date_yesterday[6:8])
-    date_yesterday = date(year, month, day)
-    date_in_class_date = date_yesterday + timedelta(days=1)
-    date_today = int(str(date_in_class_date).replace("-",""))
-
 
 
     section_list_element = resource.find(name = "ul", attrs={"class":"section_list"})   
@@ -185,32 +171,42 @@ def donga():
         return crawl_result_list
     
     news_list = []
-    numOfPage = 1
     numOfNone = 0
     numOfHeadline = 0
     numOfAd = 0
     for section_txt_element in section_txt_elements:
         li_elements = section_txt_element.find_all(name = "li")
         tit_element = section_txt_element.find(name = "span")
+        
+        page = tit_element.get_text()
+        match_object = re.search("\d+", page)
+        if match_object == None:
+            crawl_result_list.append(PAGE_ZERO_QUOTE)
+            return crawl_result_list
+
+        page = int(match_object.group())
+
         for li_element in li_elements:
             news = {}
             title = li_element.get_text()
-            news['date'] = date_today
+            news['date'] = date
             news['title'] = title
-            news['page'] = numOfPage
+            news['page'] = page
+            
+
 
             a_element = li_element.find(name="a")
             if a_element == None:
                 numOfAd += 1
-                break
+                continue
             else:
                 link = a_element.get('href')
                 news['link'] = link
             
+
             news_list.append(news)
             numOfHeadline += 1
        
-        numOfPage += 1
 
     sql_handler.inserts_news_list('donga', news_list)
     
@@ -223,14 +219,15 @@ def donga():
     return crawl_result_list
 
 
-def khan():
+def khan(date):
     """crawls title and link from khan and naver site, and stores (date, page, title, link) into db"""
 
     crawl_result_list = []
-  
+    
+    khan_url = KHAN_URL + "?PaperDate=" + date
+    date = int(date.replace("-",""))
 
-
-    response = requests.get(KHAN_URL)
+    response = requests.get(khan_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
@@ -238,18 +235,6 @@ def khan():
     resource = BeautifulSoup(response.text, features = "html.parser")
     
 
-
-    #below code crawls date from khan site
-    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) < 3:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    year = int(selected_elements[0].get("value"))
-    month = int(selected_elements[1].get("value"))
-    day = int(selected_elements[2].get("value"))
-    date_in_class_date = date(year, month, day)
-    date_today = int(str(date_in_class_date).replace("-",""))
-    
 
 
     article_elements = resource.find_all(name="div", attrs={"class":"article"})
@@ -260,11 +245,19 @@ def khan():
     news_list = []
     numOfWrongMedia = 0
     numOfAd = 0
-    numOfPage = 1
     numOfNone = 0
     numOfHeadline = 0
     
     for article_element in article_elements:
+        h2_element = article_element.find(name = "h2")
+        page = h2_element.get_text()
+        match_object = re.search('\d+', page)
+        if match_object == None:
+            crawl_result_list.append(PAGE_ZERO_QUOTE)
+            return crawl_result_list
+
+        page = int(match_object.group())
+        
         list_elements = article_element.find_all(name = "li")
         for list_element in list_elements:
             news = {}
@@ -275,9 +268,9 @@ def khan():
                 title = a_element.get_text().strip()
             
             news['title'] = title
-            news['page'] = numOfPage
-            news['date'] = date_today
-
+            news['page'] = page
+            news['date'] = date
+            
 
             #below code is for handling title with bracket([])
             #since search is not successful with title with bracket,
@@ -287,7 +280,7 @@ def khan():
                 inside_bracket = title.split('[',1)[1].split(']')[0]
                 if title.split('[')[0] == '' and title.split(']')[1] == '':
                     numOfAd = numOfAd + 1
-                    break
+                    continue
                 title = title.replace("["+inside_bracket+"]","")
 
             title_encoded = urllib.parse.quote(title)
@@ -307,11 +300,10 @@ def khan():
                 news['link'] = None
                 numOfNone = numOfNone + 1
             
+
             news_list.append(news)
             numOfHeadline = numOfHeadline + 1
     
-
-        numOfPage = numOfPage + 1
 
 
     if numOfHeadline == 0:
@@ -321,7 +313,7 @@ def khan():
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
 
     report = {}
-    report['date'] = date_today
+    report['date'] = date
     report['news'] = 'khan'
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
@@ -340,14 +332,16 @@ def khan():
     crawl_result_list.extend(success_quotes)
     return crawl_result_list
 
-def munhwa(): 
+
+def munhwa(date): 
     """crawls news headline from munhwa, and link from naver, then adds 
     (date, page, title, link) to the database."""
     crawl_result_list = []
    
+    munhwa_url = MUNHWA_URL + "?PaperDate=" + date
+    date = int(date.replace("-",""))
 
-
-    response = requests.get(MUNHWA_URL)
+    response = requests.get(munhwa_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
@@ -355,7 +349,6 @@ def munhwa():
     news_list = []
     numOfWrongMedia = 0
     numOfAd = 0
-    numOfPage = 1
     numOfNone = 0
     numOfHeadline = 0
 
@@ -370,35 +363,31 @@ def munhwa():
 
 
 
-    #below code crawls date from munhwa  site
-    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) < 3:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    
-    year = int(selected_elements[0].get("value"))
-    month = int(selected_elements[1].get("value"))
-    day = int(selected_elements[2].get("value"))
-    date_in_class_date = date(year, month, day)
-    date_today = int(str(date_in_class_date).replace("-",""))
-
-
-
 
     for paperlist_element in paperlist_elements:
+        p_element = paperlist_element.find(name="p", attrs = {"class":"num"})
+        page = p_element.get_text()
+        match_object = re.search('\d+', page)
+        if match_object == None:
+            crawl_result_list.append(PAGE_ZERO_QUOTE)
+            return crawl_result_list
+
+        page = int(match_object.group())
+        
         a_elements = paperlist_element.find_all(name = "a")
         for a_element in a_elements:
             news = {}
             title = a_element.get_text().strip()
             news['title'] = title
-            news['page'] = numOfPage
-            news['date'] = date_today
+            news['page'] = page
+            news['date'] = date
+            
 
             if "[" in title and "]" in title:
                 inside_bracket = title.split('[',1)[1].split(']')[0]
                 if title.split('[')[0] == '' and title.split(']')[1] == '':
                     numOfAd = numOfAd + 1
-                    break
+                    continue
                 title = title.replace("["+inside_bracket+"]","")
 
             title_encoded = urllib.parse.quote(title)
@@ -416,11 +405,11 @@ def munhwa():
             else:
                 news['link'] = None
                 numOfNone = numOfNone + 1
+            
 
             news_list.append(news)
             numOfHeadline = numOfHeadline + 1
 
-        numOfPage = numOfPage + 1
 
 
     if numOfHeadline == 0:
@@ -430,7 +419,7 @@ def munhwa():
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
 
     report = {}
-    report['date'] = date_today
+    report['date'] = date
     report['news'] = 'munhwa'
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
@@ -453,14 +442,15 @@ def munhwa():
 
 
 
-def kmib():
+def kmib(date):
     """crawls title and link from kmib and naver site, and stores (date, page, title, link) into db"""
 
     crawl_result_list = []
 
+    kmib_url = KMIB_URL + "?PaperDate=" + date
+    date = int(date.replace("-",""))
 
-
-    response = requests.get(KMIB_URL)
+    response = requests.get(kmib_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list
@@ -480,38 +470,31 @@ def kmib():
         crawl_result_list.append(PAPERLIST_ZERO_QUOTE)
         return crawl_result_list
 
-
-
-
-    #below code crawls date from kmib site
-    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) < 3:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-
-    year = int(selected_elements[0].get("value"))
-    month = int(selected_elements[1].get("value"))
-    day = int(selected_elements[2].get("value"))
-    date_in_class_date = date(year, month, day)
-    date_today = int(str(date_in_class_date).replace("-",""))
-
-
-
-
+    #below code extracts title 
     for paperlist_element in paperlist_elements:
+        p_element = paperlist_element.find(name="p", attrs = {"class":"num"})
+        page = p_element.get_text()
+        match_object = re.search('\d+', page)
+        if match_object == None:
+            crawl_result_list.append(PAGE_ZERO_QUOTE)
+            return crawl_result_list
+
+        page = int(match_object.group())       
+
         a_elements = paperlist_element.find_all(name = "a")
         for a_element in a_elements:
             news = {}
             title = a_element.get_text().strip()
             news['title'] = title
-            news['page'] = numOfPage
-            news['date'] = date_today
+            news['page'] = page
+            news['date'] = date
+            
 
             if "[" in title and "]" in title:
                 inside_bracket = title.split('[',1)[1].split(']')[0]
                 if title.split('[')[0] == '' and title.split(']')[1] == '':
                     numOfAd = numOfAd + 1
-                    break
+                    continue
                 title = title.replace("["+inside_bracket+"]","")
 
             title_encoded = urllib.parse.quote(title)
@@ -533,7 +516,6 @@ def kmib():
             news_list.append(news)
             numOfHeadline = numOfHeadline + 1
 
-        numOfPage = numOfPage + 1
 
     if numOfHeadline == 0:
         crawl_result_list.append(HEADLINE_ZERO_QUOTE)
@@ -542,7 +524,7 @@ def kmib():
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
 
     report = {}
-    report['date'] = date_today
+    report['date'] = date
     report['news'] = 'kmib'
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
@@ -564,51 +546,44 @@ def kmib():
 
 
 
-def seoul():
+def seoul(date):
     """crawls title from seoul economic and link from naver, and stores (date, page, title, link) into db"""
 
     crawl_result_list = []
 
-    response = requests.get(SEOUL_URL)
+    seoul_url = SEOUL_URL + "?PaperDate=" + date
+    date_with_dash = date
+    date = int(date.replace("-",""))
+    
+    response = requests.get(seoul_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list  
     resource = BeautifulSoup(response.text,features = "html.parser")
+   
     
-    #below code crawls date from seoul economic site
-    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) < 3:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    year = int(selected_elements[0].get("value"))
-    month = int(selected_elements[1].get("value"))
-    day = int(selected_elements[2].get("value"))
-    date_in_class_date = date(year, month, day)
-    date_with_dash = str(date_in_class_date)
-    date_today = int(date_with_dash.replace("-",""))
 
     #below code crawls how many bottom pages are in at seoul economic site
     a_elements = resource.find_all(name = "a", attrs = {"style" : "padding-top:2px;cursor:hand"})
     if len(a_elements) == 0:
         crawl_result_list.append(PAGE_ZERO_QUOTE)
         return crawl_result_list
-    page_set = set()
+    page_list = []
     for a_element in a_elements:
         href = a_element.get("href")
         page_number = int(href.split("(")[1].split(")")[0])
-        page_set.add(page_number)
-    page_list = sorted(list(page_set))
+        page_list.append(page_number)
+    max_page_number = max(page_list)
 
     #Now code of extracting titles starts
     news_list = []
     numOfWrongMedia = 0
     numOfAd = 0
-    numOfPage = 1
     numOfNone = 0
     numOfHeadline = 0
 
-    for page in page_list:
-        response = requests.post(SEOUL_URL+"?PaperDate="+date_with_dash, data = {"searchpage": page, "searchdate":date_with_dash})
+    for searchpage in range(1, max_page_number+1):
+        response = requests.post(SEOUL_URL+"?PaperDate="+date_with_dash, data = {"searchpage": searchpage, "searchdate":date_with_dash})
         if response.status_code != 200:
             crawl_result_list.append(RESPONSE_ERROR_QUOTE)
             return crawl_result_list
@@ -620,19 +595,31 @@ def seoul():
             return crawl_result_list
 
         for paperlist_element in paperlist_elements:
+
+            p_element = paperlist_element.find(name="p", attrs = {"class":"num"})
+            page = p_element.get_text()
+            match_object = re.search('\d+', page)
+            if match_object == None:
+                crawl_result_list.append(PAGE_ZERO_QUOTE)
+                return crawl_result_list
+
+            page = int(match_object.group())
+            
             a_elements = paperlist_element.find_all(name = "a")
             for a_element in a_elements:
                 news = {}
                 title = a_element.get_text().strip()
                 news['title'] = title
-                news['page'] = numOfPage
-                news['date'] = date_today
+                news['page'] = page
+                news['date'] = date
+                
+                
 
                 if "[" in title and "]" in title:
                     inside_bracket = title.split('[',1)[1].split(']')[0]
                     if title.split('[')[0] == '' and title.split(']')[1] == '':
                         numOfAd = numOfAd + 1
-                        break
+                        continue
                     title = title.replace("["+inside_bracket+"]","")
 
                 title_encoded = urllib.parse.quote(title)
@@ -654,7 +641,6 @@ def seoul():
                 news_list.append(news)
                 numOfHeadline = numOfHeadline + 1
 
-            numOfPage = numOfPage + 1       
     
     
     if numOfHeadline == 0:
@@ -664,7 +650,7 @@ def seoul():
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
     
     report = {}
-    report['date'] = date_today
+    report['date'] = date
     report['news'] = 'seoul'
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
@@ -683,165 +669,41 @@ def seoul():
     crawl_result_list.extend(success_quotes)
     return crawl_result_list
 
-
-
-
-
-def hankook():
-    
-    """DEPRECATED"""
-
-    """crawls title from hankook and link from naver, and stores (date, page, title, link) into db"""
-
-    crawl_result_list = []
-
-    response = requests.get(HANKOOK_URL)
-    if response.status_code != 200:
-        crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-        return crawl_result_list  
-    resource = BeautifulSoup(response.text,features = "html.parser")
-    
-    #below code crawls date from seoul economic site
-    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) < 4:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    year = int(selected_elements[1].get("value"))
-    month = int(selected_elements[2].get("value"))
-    day = int(selected_elements[3].get("value"))
-    date_in_class_date = date(year, month, day)
-    date_with_dash = str(date_in_class_date)
-    date_today = int(date_with_dash.replace("-",""))
-
-    #below code crawls how many bottom pages are in at seoul economic site
-    a_elements = resource.find_all(name = "a", attrs = {"style" : "padding-top:2px;cursor:hand"})
-    if len(a_elements) == 0:
-        crawl_result_list.append(PAGE_ZERO_QUOTE)
-        return crawl_result_list
-    page_set = set()
-    for a_element in a_elements:
-        href = a_element.get("href")
-        page_number = int(href.split("(")[1].split(")")[0])
-        page_set.add(page_number)
-    page_list = sorted(list(page_set))
-
-    #Now code of extracting titles starts
-    news_list = []
-    numOfWrongMedia = 0
-    numOfAd = 0
-    numOfPage = 1
-    numOfNone = 0
-    numOfHeadline = 0
-
-    for page in page_list:
-        response = requests.post(HANKOOK_URL, data = {"page": page })
-        if response.status_code != 200:
-            crawl_result_list.append(RESPONSE_ERROR_QUOTE)
-            return crawl_result_list
-
-        resource = BeautifulSoup(response.text,features = "html.parser")
-        paperlist_elements =  resource.find_all(name="div", attrs={"class":"paperlist"})    
-        if len(paperlist_elements) == 0:
-            crawl_result_list.append(PAPERLIST_ZERO_QUOTE)
-            return crawl_result_list
-
-        for paperlist_element in paperlist_elements:
-            a_elements = paperlist_element.find_all(name = "a")
-            for a_element in a_elements:
-                news = {}
-                title = a_element.get("title")
-                news['title'] = title
-                news['page'] = numOfPage
-                news['date'] = date_today
-
-                if "[" in title and "]" in title:
-                    inside_bracket = title.split('[',1)[1].split(']')[0]
-                    if title.split('[')[0] == '' and title.split(']')[1] == '':
-                        numOfAd = numOfAd + 1
-                        break
-                    title = title.replace("["+inside_bracket+"]","")
-
-                title_encoded = urllib.parse.quote(title)
-                url = NAVER_SEARCH_URL + title_encoded
-                response = requests.get(url)
-                resource = BeautifulSoup(response.text,features = "html.parser")
-                a_element = resource.find(name ="a", attrs ={ "class":"_sp_each_title"})
-                if a_element != None:
-                    link =  a_element.get('href')
-                    if link.find("hankook") == -1:
-                        numOfWrongMedia = numOfWrongMedia + 1
-                        news['link'] = None
-                    else:
-                        news['link'] = link
-                else:
-                    news['link'] = None
-                    numOfNone = numOfNone + 1
-
-                news_list.append(news)
-                numOfHeadline = numOfHeadline + 1
-
-            numOfPage = numOfPage + 1       
     
     
-    if numOfHeadline == 0:
-        crawl_result_list.append(HEADLINE_ZERO_QUOTE)
-        return crawl_result_list
-    else:
-        failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
-    
-    report = {}
-    report['date'] = date_today
-    report['news'] = 'hankook'
-    report['whole'] = numOfHeadline
-    report['none'] = numOfNone + numOfWrongMedia
-    report['failure'] = failure_percentage
+
     
 
-    success_quotes = []
-    success_quotes.append("number of none: " + str(numOfNone))
-    success_quotes.append("number of msmatched news: " + str(numOfWrongMedia))
-    success_quotes.append("number of ads: " + str(numOfAd))
-    success_quotes.append("number of headline: " + str(numOfHeadline))
-    success_quotes.append("failure percentage: " + str(failure_percentage) + "%")
-    
-    crawl_result_list.extend(success_quotes)
-    return crawl_result_list
 
-
-def mk():
+def mk(date):
     """crawls title from maeil economy and link from naver, and stores (date, page, title, link) into db"""
 
     crawl_result_list = []
+    
+    mk_url = MK_URL + "?PaperDate=" + date
+    date = int(date.replace("-",""))
 
-    response = requests.get(MK_URL)
+    response = requests.get(mk_url)
     if response.status_code != 200:
         crawl_result_list.append(RESPONSE_ERROR_QUOTE)
         return crawl_result_list  
     resource = BeautifulSoup(response.text,features = "html.parser")
+   
     
-    #below code crawls date from seoul economic site
-    selected_elements = resource.find_all(name= "option", attrs={"selected":"selected"})
-    if len(selected_elements) < 3:
-        crawl_result_list.append(DATE_NONE_QUOTE)
-        return crawl_result_list
-    year = int(selected_elements[0].get("value"))
-    month = int(selected_elements[1].get("value"))
-    day = int(selected_elements[2].get("value"))
-    date_in_class_date = date(year, month, day)
-    date_with_dash = str(date_in_class_date)
-    date_today = int(date_with_dash.replace("-",""))
 
     #below code crawls how many bottom pages are in at seoul economic site
     a_elements = resource.find_all(name = "a", attrs = {"style" : "padding-top:2px;cursor:hand"})
     if len(a_elements) == 0:
         crawl_result_list.append(PAGE_ZERO_QUOTE)
         return crawl_result_list
-    page_set = set()
+    page_list = []
     for a_element in a_elements:
         href = a_element.get("href")
         page_number = int(href.split("(")[1].split(")")[0])
-        page_set.add(page_number)
-    page_list = sorted(list(page_set))
+        page_list.append(page_number)
+    max_page_number = max(page_list)
+    
+    
 
     #Now code of extracting titles starts
     news_list = []
@@ -851,8 +713,8 @@ def mk():
     numOfNone = 0
     numOfHeadline = 0
 
-    for page in page_list:
-        response = requests.get(MK_URL+"?page=" +str(page))
+    for page_button in range(1, max_page_number+1):
+        response = requests.get(mk_url+"&page=" +str(page_button))
         if response.status_code != 200:
             crawl_result_list.append(RESPONSE_ERROR_QUOTE)
             return crawl_result_list
@@ -864,19 +726,29 @@ def mk():
             return crawl_result_list
 
         for paperlist_element in paperlist_elements:
+            p_element = paperlist_element.find(name="p", attrs = {"class":"num"})
+            page = p_element.get_text()
+            match_object = re.search('\d+', page)
+            if match_object == None:
+                crawl_result_list.append(PAGE_ZERO_QUOTE)
+                return crawl_result_list
+
+            page = int(match_object.group())
+
             a_elements = paperlist_element.find_all(name = "a")
             for a_element in a_elements:
                 news = {}
                 title = a_element.get_text().strip()
                 news['title'] = title
-                news['page'] = numOfPage
-                news['date'] = date_today
+                news['page'] = page
+                news['date'] = date
+                
 
                 if "[" in title and "]" in title:
                     inside_bracket = title.split('[',1)[1].split(']')[0]
                     if title.split('[')[0] == '' and title.split(']')[1] == '':
                         numOfAd = numOfAd + 1
-                        break
+                        continue
                     title = title.replace("["+inside_bracket+"]","")
 
                 title_encoded = urllib.parse.quote(title)
@@ -894,11 +766,9 @@ def mk():
                 else:
                     news['link'] = None
                     numOfNone = numOfNone + 1
-
                 news_list.append(news)
                 numOfHeadline = numOfHeadline + 1
 
-            numOfPage = numOfPage + 1       
     
     
     if numOfHeadline == 0:
@@ -908,7 +778,7 @@ def mk():
         failure_percentage = round((numOfNone + numOfWrongMedia) /numOfHeadline * 100, 2)
     
     report = {}
-    report['date'] = date_today
+    report['date'] = date
     report['news'] = 'mk'
     report['whole'] = numOfHeadline
     report['none'] = numOfNone + numOfWrongMedia
