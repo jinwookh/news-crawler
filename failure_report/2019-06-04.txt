@@ -1,0 +1,46 @@
+CHOSUN CRAWLING STARTS!
+number of none: 4
+number of msmatched news: 5
+number of ads: 0
+number of headline: 91
+failure percentage: 9.89%
+
+DONGA CRAWLING STARTS!
+number of headline: 91
+number of ad: 12
+
+KHAN CRAWLING STARTS!
+number of none: 7
+number of msmatched news: 19
+number of ads: 33
+number of headline: 103
+failure percentage: 25.24%
+
+MUNHWA CRAWLING STARTS!
+number of none: 15
+number of msmatched news: 26
+number of ads: 40
+number of headline: 130
+failure percentage: 31.54%
+
+KMIB CRAWLING STARTS!
+number of none: 12
+number of msmatched news: 24
+number of ads: 35
+number of headline: 113
+failure percentage: 31.86%
+
+SEOUL CRAWLING STARTS!
+number of none: 23
+number of msmatched news: 36
+number of ads: 38
+number of headline: 161
+failure percentage: 36.65%
+
+MK CRAWLING STARTS!
+number of none: 7
+number of msmatched news: 23
+number of ads: 48
+number of headline: 133
+failure percentage: 22.56%
+

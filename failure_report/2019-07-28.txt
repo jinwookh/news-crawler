@@ -1,0 +1,25 @@
+CHOSUN CRAWLING STARTS!
+Error: number of ss_list_elements are zero
+
+DONGA CRAWLING STARTS!
+Error: number of section_list_element is 0
+
+KHAN CRAWLING STARTS!
+Error: number of article is 0
+
+MUNHWA CRAWLING STARTS!
+Error: number of pages are zero
+
+KMIB CRAWLING STARTS!
+Error: number of pages are zero
+
+SEOUL CRAWLING STARTS!
+Error: number of pages are zero
+
+MK CRAWLING STARTS!
+number of none: 9
+number of msmatched news: 27
+number of ads: 24
+number of headline: 130
+failure percentage: 27.69%
+

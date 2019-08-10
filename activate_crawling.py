@@ -1,6 +1,6 @@
 import crawls
 import sql_handler
-from datetime import date
+from datetime import datetime, timedelta
 
 CHOSUN_START_QUOTE = "CHOSUN CRAWLING STARTS!"
 DONGA_START_QUOTE = "DONGA CRAWLING STARTS!"
@@ -11,10 +11,12 @@ SEOUL_START_QUOTE = "SEOUL CRAWLING STARTS!"
 MK_START_QUOTE = "MK CRAWLING STARTS!"
 
 
-chosen_date = str(date(2019,1,1))
+#chosen_date = str(date(2019,1,1))
+today_date_in_class = datetime.now() + timedelta(hours=9)
+chosen_date = str(today_date_in_class).split()[0]
 
 
-f = open("./failure_report/"+chosen_date+".txt", "w")
+f = open("/home/ubuntu/news_crawler/failure_report/"+chosen_date+".txt", "w")
 
 print(CHOSUN_START_QUOTE)
 f.write(CHOSUN_START_QUOTE +'\n')
@@ -45,7 +47,7 @@ f.write("\n")
 
 print(MUNHWA_START_QUOTE)
 f.write(MUNHWA_START_QUOTE+'\n')
-munhwa_crawling_results = crawls.munhwa(chosen_date)
+munhwa_crawling_results = crawls.munhwa(str(datetime.now()).split()[0])
 for result in munhwa_crawling_results:
     print(result)
     f.write(result + '\n')
