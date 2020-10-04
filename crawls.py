@@ -31,7 +31,7 @@ MK_URL = "http://epaper.mk.co.kr/PaperList.aspx"
 
 def chosun(date): 
     """crawls news headline from chosun, and link from naver, then adds 
-    (date, page, title, link) to the database."""
+    (company_name, date, page, title, link) to the database."""
     crawl_result_list = []
     
     
@@ -72,6 +72,7 @@ def chosun(date):
         for li_element in li_elements:
             news = {}
             title = li_element.get_text()
+            news['company_name'] = 'chosun'
             news['title'] = title
             news['page'] = numOfPage
             news['date'] = date
@@ -144,7 +145,7 @@ def chosun(date):
 
 def donga(date):
     """crawls news headline from donga, and link from naver, then adds 
-    (date, page, title, link) to the database."""
+    (company_name, date, page, title, link) to the database."""
     crawl_result_list = []
 
     date = date.replace("-", "")
@@ -189,6 +190,7 @@ def donga(date):
         for li_element in li_elements:
             news = {}
             title = li_element.get_text()
+            news['company_name'] = 'donga'
             news['date'] = date
             news['title'] = title
             news['page'] = page
@@ -220,7 +222,7 @@ def donga(date):
 
 
 def khan(date):
-    """crawls title and link from khan and naver site, and stores (date, page, title, link) into db"""
+    """crawls title and link from khan and naver site, and stores (company_name,date, page, title, link) into db"""
 
     crawl_result_list = []
     
@@ -261,6 +263,7 @@ def khan(date):
         list_elements = article_element.find_all(name = "li")
         for list_element in list_elements:
             news = {}
+            news['company_name'] = 'khan'
             
             a_element = list_element.find(name = "a")
             title = a_element.get("title")
@@ -335,7 +338,7 @@ def khan(date):
 
 def munhwa(date): 
     """crawls news headline from munhwa, and link from naver, then adds 
-    (date, page, title, link) to the database."""
+    (company_name, date, page, title, link) to the database."""
     crawl_result_list = []
    
     munhwa_url = MUNHWA_URL + "?PaperDate=" + date
@@ -378,6 +381,7 @@ def munhwa(date):
         for a_element in a_elements:
             news = {}
             title = a_element.get_text().strip()
+            news['company_name'] = 'munhwa'
             news['title'] = title
             news['page'] = page
             news['date'] = date
@@ -443,7 +447,7 @@ def munhwa(date):
 
 
 def kmib(date):
-    """crawls title and link from kmib and naver site, and stores (date, page, title, link) into db"""
+    """crawls title and link from kmib and naver site, and stores (company_name, date, page, title, link) into db"""
 
     crawl_result_list = []
 
@@ -484,6 +488,7 @@ def kmib(date):
         a_elements = paperlist_element.find_all(name = "a")
         for a_element in a_elements:
             news = {}
+            news['company_name'] = 'kmib'
             title = a_element.get_text().strip()
             news['title'] = title
             news['page'] = page
@@ -547,7 +552,7 @@ def kmib(date):
 
 
 def seoul(date):
-    """crawls title from seoul economic and link from naver, and stores (date, page, title, link) into db"""
+    """crawls title from seoul economic and link from naver, and stores (company_name, date, page, title, link) into db"""
 
     crawl_result_list = []
 
@@ -609,6 +614,8 @@ def seoul(date):
             for a_element in a_elements:
                 news = {}
                 title = a_element.get_text().strip()
+
+                news['company_name'] = 'seoul'
                 news['title'] = title
                 news['page'] = page
                 news['date'] = date
@@ -676,7 +683,7 @@ def seoul(date):
 
 
 def mk(date):
-    """crawls title from maeil economy and link from naver, and stores (date, page, title, link) into db"""
+    """crawls title from maeil economy and link from naver, and stores (company_name, date, page, title, link) into db"""
 
     crawl_result_list = []
     
@@ -738,6 +745,7 @@ def mk(date):
             a_elements = paperlist_element.find_all(name = "a")
             for a_element in a_elements:
                 news = {}
+                news['company_name'] = 'mk'
                 title = a_element.get_text().strip()
                 news['title'] = title
                 news['page'] = page

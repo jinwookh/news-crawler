@@ -14,6 +14,7 @@ db_cursor.execute("CREATE TABLE IF NOT EXISTS kmib (date INTEGER, page INTEGER, 
 db_cursor.execute("CREATE TABLE IF NOT EXISTS seoul (date INTEGER, page INTEGER, title TEXT, link TEXT)")
 db_cursor.execute("CREATE TABLE IF NOT EXISTS mk (date INTEGER, page INTEGER, title TEXT, link TEXT)")
 
+db_cursor.execute("CREATE TABLE IF NOT EXISTS news_box (company_name TEXT, date INTEGER, page INTEGER, title TEXT, link TEXT)")
 db_cursor.execute("CREATE TABLE IF NOT EXISTS crawling_result (date INTEGER, news TEXT, whole INTEGER, none INTEGER, failure REAL)")
 
 db_cursor.close()
@@ -33,21 +34,19 @@ def inserts_news_list(table_name, news_list):
         if type(news) != type({}):
             raise TypeError("news in news_list should be dictionary type")
         db_parameter_list = []
+        db_parameter_list.append(news['company_name'])
         db_parameter_list.append(news['date'])
         db_parameter_list.append(news['page'])
         db_parameter_list.append(news['title'])
         db_parameter_list.append(news['link'])
         
-        insert_query = "INSERT INTO " + table_name + " VALUES(?,?,?,?)"
-
-
         check_repetition_query = "select * from " +table_name + " where title=?"
         title = news['title']
         tuplified_title = (title, )
         repetition_result = db_cursor.execute( check_repetition_query, tuplified_title).fetchone()
 
         if repetition_result == None:
-            insert_query = "INSERT INTO " + table_name + " VALUES(?,?,?,?)"
+            insert_query = "INSERT INTO " + "news_box" + " VALUES(?,?,?,?,?)"
             db_cursor.execute( insert_query, db_parameter_list)
 
     connection.commit()    
