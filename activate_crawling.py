@@ -81,6 +81,4 @@ for result in mk_crawling_results:
 print("")
 f.write("\n")
 
-sql_handler.converts_db_into_text_file()
-
 f.close()

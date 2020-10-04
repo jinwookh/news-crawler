@@ -117,6 +117,9 @@ def shows_all( table_name ):
     connection.close()
 
 def converts_db_into_text_file():
+
+    """DEPRECATED"""
+
     f = open("news-db.txt","w")
     connection = sqlite3.connect('news.db')
     db_cursor = connection.cursor()
